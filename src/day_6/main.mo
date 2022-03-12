@@ -49,7 +49,7 @@ var nextTokenIndex : Nat = 0;  //Number of minted NFTs
         };
       case(false) //caller is not anonymous, mint token to caller and Increment Token Index
        { 
-        Debug.print("Minting Token ID: " # Nat.toText(nextTokenIndex));
+        Debug.print("Minting Token ID: " # Nat.toText(nextTokenIndex) # " for: " # Principal.toText(caller));
         registry.put(nextTokenIndex, caller);
         nextTokenIndex := nextTokenIndex +1;
         #ok;
@@ -86,14 +86,30 @@ public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) 
   };
 
 
-};  // This is the actor definition termination
+
 
 
 // Challenge 5 : balance function returns a list of tokenIndex owned by the called.
 
-//public func balance(){
+public shared({caller}) func balance(owner_query : Principal) : async TransferResult{
+switch(Principal.isAnonymous(caller)){
+      case(true){
+        #err("Calling canister identifies as anonymous. This service requires authentication.");
+        };
+      case(false) //caller is not anonymous, transfer token to new owner.
+       { 
+        // iterate through getting tokens of the owner_query
+        Debug.print("Starting count Tokens - for: " # Principal.toText(owner_query))
+        for(hodlr in registry.key(owner_query);{
+          registry.get(token, owner_query);
+          Debug.print(Principal.toText(newowner) # "owns token:" # Nat.toText(token));
+          };
+        #ok;  
+        };
+      };
+    };
 
-//}
+};  // This is the actor definition termination
 
 //Challenge 6 : http_request function returns latest minters stock.
 //public func http_request() Text{
