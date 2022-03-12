@@ -14,6 +14,8 @@ import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 
+import HTTP "http";
+
 actor {
   // Challenge 1
   public type TokenIndex = Nat;
@@ -24,9 +26,7 @@ actor {
 
 
 
-import HTTP "http";
-import Text "mo:base/Text";
-actor {
+
   public query func http_request(request : HTTP.Request) : async HTTP.Response {
     let response = {
       body = Text.encodeUtf8("Hello world");
@@ -36,7 +36,7 @@ actor {
       };
       return(response)
     };
-};
+
 
 
 
