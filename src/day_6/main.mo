@@ -11,6 +11,8 @@ import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Hash "mo:base/Hash";
 import Array "mo:base/Array";
+import Iter "mo:base/Iter";
+import Option "mo:base/Option";
 
 actor {
   // Challenge 1
@@ -21,20 +23,20 @@ actor {
   };
 
 // Challenge 3 - Nat called nextTokenIndex, indexing number of minted NFTs.
-var nextTokenIndex : Nat = 0;  //Number of minted NFTs
+//var nextTokenIndex : Nat = 0;  //Number of minted NFTs
 
 // Challenge 2
 //Declare registry HashMap called  Key TokenIndex, value Principal. which principal owns which TokenIndex.
 //Changed this around from Challenge 3 (commented it out for now) - try index into HashMap by TokenIndex.
 
 private stable var registryEntries : [(TokenIndex, Principal)] = [];
-private stable var tokendata : [(TokenIndex, Text)] = [];
+private stable var tokendataEntries : [(TokenIndex, Text)] = [];
 private stable var balancesEntries : [(Principal, Nat)] = [];
 
 
-private let registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.fromIter<TokenIindex, Principal>(registryEntries.vals(), 10, Nat.equal, Hash.hash);
+private let tokendata : HashMap.HashMap<TokenIndex, Text> = HashMap.fromIter<TokenIndex, Text>(tokendataEntries.vals(), 10, Nat.equal, Hash.hash);
 
-private let tokenURIs : HashMap.HashMap<TokenIndex, Text> = HashMap.fromIter<TokenIndex, Text>(tokendataEntries.vals(), 10, Nat.equal, Hash.hash);
+private let registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.fromIter<TokenIndex, Principal>(registryEntries.vals(), 10, Nat.equal, Hash.hash);
 
 private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Principal, Nat>(balancesEntries.vals(), 10, Principal.equal, Principal.hash);
 
@@ -73,20 +75,20 @@ private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Princi
 //check for errors and return type **Result**.
 //public func transfer(to : Principal, tokenIndex : Nat) : async {
 
-  public shared(msg) func transferFrom(from : Principal, to : Principal, tokenId : Nat) : () {
-        assert _isApprovedOrOwner(msg.caller, tokenId);
+  public shared(msg) func transferFrom(from : Principal, to : Principal, token : Nat) : () {
+        assert _isOwner(msg.caller, token);
 
-        _transfer(from, to, tokenId);
+        _transfer(from, to, token);
     };
 
-  private func _transfer(from : Principal, to : Principal, tokenId : Nat) : () {
-        assert _exists(tokenId);
+  private func _transfer(from : Principal, to : Principal, token : Nat) : () {
+        assert _exists(token);
         _incrementBalance(to);
-        owners.put(tokenId, to);
+        registry.put(token, to);
     };
 
-  private func _exists(tokenId : Nat) : Bool {
-        return Option.isSome(owners.get(tokenId));
+  private func _exists(token : Nat) : Bool {
+        return Option.isSome(registry.get(token));
     };
 
   private func _incrementBalance(address : Principal) {
@@ -98,6 +100,20 @@ private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Princi
                 balances.put(address, 1);
             }
         }
+    };
+
+  private func _isOwner(spender : Principal, token : Nat) : Bool {
+        assert _exists(token);
+        let currentowner: ?Principal = registry.get(token);
+        return spender == currentowner;
+    };
+
+ private func _mint(to : Principal, token : Nat, data : Text) : () {
+        assert not _exists(token);
+
+        _incrementBalance(to);
+        registry.put(token, to);
+        tokendata.put(token,data)
     };
 
 
@@ -229,10 +245,3 @@ private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Princi
     // private func _ownerOf(tokenId : T.TokenId) : ?Principal {
     //     return owners.get(tokenId);
     // };
-//  private func _mint(to : Principal, tokenId : Nat, uri : Text) : () {
-//         assert not _exists(tokenId);
-
-//         _incrementBalance(to);
-//         owners.put(tokenId, to);
-//         tokenURIs.put(tokenId,uri)
-//     };
