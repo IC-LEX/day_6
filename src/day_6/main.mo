@@ -44,9 +44,9 @@ var nextTokenIndex : TokenIndex = 0;  //Number of minted NFTs
         };
       case(false) //caller is not anonymous, mint token to caller and Increment Token Index
        { 
+        Debug.print("Minting Token ID: " # Nat.toText(nextTokenIndex));
         registry.put(caller, nextTokenIndex);
-        nextTokenIndex := nextTokenIndex + 1;
-        Debug.print(Nat.toText(nextTokenIndex));
+        nextTokenIndex := nextTokenIndex +1;
         #ok;
        };
     };
