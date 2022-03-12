@@ -10,6 +10,7 @@ import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Hash "mo:base/Hash";
+import Array "mo:base/Array";
 
 actor {
   // Challenge 1
@@ -25,15 +26,17 @@ var nextTokenIndex : Nat = 0;  //Number of minted NFTs
 // Challenge 2
 //Declare registry HashMap called  Key TokenIndex, value Principal. which principal owns which TokenIndex.
 //Changed this around from Challenge 3 (commented it out for now) - try index into HashMap by TokenIndex.
- 
+
 private stable var registryEntries : [(TokenIndex, Principal)] = [];
- 
-var registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.fromIter<TokenIndex, Principal>(10, Nat.equal, Hash.hash);
+private stable var tokendata : [(TokenIndex, Text)] = [];
+private stable var balancesEntries : [(Principal, Nat)] = [];
+
+
 private let registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.fromIter<TokenIindex, Principal>(registryEntries.vals(), 10, Nat.equal, Hash.hash);
 
-private stable var balancesEntries : [(Principal, Nat)] = [];
-private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Principal, Nat>(balancesEntries.vals(), 10, Principal.equal, Principal.hash);
+private let tokenURIs : HashMap.HashMap<TokenIndex, Text> = HashMap.fromIter<TokenIndex, Text>(tokendataEntries.vals(), 10, Nat.equal, Hash.hash);
 
+private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Principal, Nat>(balancesEntries.vals(), 10, Principal.equal, Principal.hash);
 
 //Mint function - If the user is authenticated,
 // associate the current TokenIndex with the caller
@@ -49,49 +52,77 @@ private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Princi
   public type MintResult = Result<(), Text>;
   public type TransferResult = Result<(), Text>;
 
-  public shared({caller}) func mint() : async MintResult{
+  // public shared({caller}) func mint() : async MintResult{
     
-    switch(Principal.isAnonymous(caller)){
-      case(true){
-        #err("Calling canister identifies as anonymous. This service requires authentication.");
-        };
-      case(false) //caller is not anonymous, mint token to caller and Increment Token Index
-       { 
-        Debug.print("Minting Token ID: " # Nat.toText(nextTokenIndex) # " for: " # Principal.toText(caller));
-        registry.put(nextTokenIndex, caller);
-        nextTokenIndex := nextTokenIndex +1;
-        #ok;
-       };
-    };
-  };
+  //   switch(Principal.isAnonymous(caller)){
+  //     case(true){
+  //       #err("Calling canister identifies as anonymous. This service requires authentication.");
+  //       };
+  //     case(false) //caller is not anonymous, mint token to caller and Increment Token Index
+  //      { 
+  //       Debug.print("Minting Token ID: " # Nat.toText(nextTokenIndex) # " for: " # Principal.toText(caller));
+  //       registry.put(nextTokenIndex, caller);
+  //       nextTokenIndex := nextTokenIndex +1;
+  //       #ok;
+  //      };
+  //   };
+  // };
 
 //Challenge 4 - transfer function
 //transfer ownership of tokenIndex to the specified principal.
 //check for errors and return type **Result**.
 //public func transfer(to : Principal, tokenIndex : Nat) : async {
 
-public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) : async TransferResult{
+  public shared(msg) func transferFrom(from : Principal, to : Principal, tokenId : Nat) : () {
+        assert _isApprovedOrOwner(msg.caller, tokenId);
+
+        _transfer(from, to, tokenId);
+    };
+
+  private func _transfer(from : Principal, to : Principal, tokenId : Nat) : () {
+        assert _exists(tokenId);
+        _incrementBalance(to);
+        owners.put(tokenId, to);
+    };
+
+  private func _exists(tokenId : Nat) : Bool {
+        return Option.isSome(owners.get(tokenId));
+    };
+
+  private func _incrementBalance(address : Principal) {
+        switch (balances.get(address)) {
+            case (?v) {
+                balances.put(address, v + 1);
+            };
+            case null {
+                balances.put(address, 1);
+            }
+        }
+    };
+
+
+// public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) : async TransferResult{
     
-    switch(Principal.isAnonymous(caller)){
-      case(true){
-        #err("Calling canister identifies as anonymous. This service requires authentication.");
-        };
-      case(false) //caller is not anonymous, transfer token to new owner.
-       { 
-        //Get owner of tokenID, if same as caller do transfer, else err 
-        var currentowner: ?Principal = registry.get(token);
-        if(caller != currentowner)
-          {
-          Debug.print("Transferring Token ID: " # Nat.toText(token) # "to: " # Principal.toText(newowner));
-          registry.put(token, newowner); 
-          #ok;
-          } else {
-          #err("you must own the token to transfer it.");
-          };
-        };
-      };
+//     switch(Principal.isAnonymous(caller)){
+//       case(true){
+//         #err("Calling canister identifies as anonymous. This service requires authentication.");
+//         };
+//       case(false) //caller is not anonymous, transfer token to new owner.
+//        { 
+//         //Get owner of tokenID, if same as caller do transfer, else err 
+//         var currentowner: ?Principal = registry.get(token);
+//         if(caller != currentowner)
+//           {
+//           Debug.print("Transferring Token ID: " # Nat.toText(token) # "to: " # Principal.toText(newowner));
+//           registry.put(token, newowner); 
+//           #ok;
+//           } else {
+//           #err("you must own the token to transfer it.");
+//           };
+//         };
+//       };
     
-  };
+//   };
 
 
 
@@ -102,24 +133,24 @@ public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) 
 
 
 
-public shared({caller}) func balance(owner_query : Principal) : async TransferResult{
-switch(Principal.isAnonymous(caller)){
-      case(true){
-        #err("Calling canister identifies as anonymous. This service requires authentication.");
-        };
-      case(false) //caller is not anonymous, transfer token to new owner.
-       { 
-        // iterate through getting tokens of the owner_query
-        Debug.print("Starting count Tokens - for: " # Principal.toText(owner_query));
-        for(hodlr in registry.vals(owner_query){
-          Debug.print(Principal.toText(hodlr) # "owns token:" # Nat.toText(token));
-          };
-        #ok;  
-        };
-      };
-    };
+// public shared({caller}) func balance(owner_query : Principal) : async TransferResult{
+// switch(Principal.isAnonymous(caller)){
+//       case(true){
+//         #err("Calling canister identifies as anonymous. This service requires authentication.");
+//         };
+//       case(false) //caller is not anonymous, transfer token to new owner.
+//        { 
+//         // iterate through getting tokens of the owner_query
+//         Debug.print("Starting count Tokens - for: " # Principal.toText(owner_query));
+//         for(t in registry.vals(owner_query){
+//           Debug.print(Principal.toText(owner_query) # "owns token:" # Nat.toText(t));
+//           };
+//         #ok;  
+//         };
+//       };
+//     };
 
-};  // This is the actor definition termination
+
 
 //Challenge 6 : http_request function returns latest minters stock.
 //public func http_request() Text{
@@ -127,15 +158,22 @@ switch(Principal.isAnonymous(caller)){
 //};
 
 
-
-
-
 //Challenge 7 : Modify the actor for safe upgrade without loosing state.
 //Therefore  declared the registry HashMap as stable.
 //and added system preupgrade and post upgrade routines
 
+    system func preupgrade() {
+        registryEntries := Iter.toArray(registry.entries());
+        tokendataEntries := Iter.toArray(tokendata.entries());
+        balancesEntries := Iter.toArray(balances.entries());
+    };
 
-
+    system func postupgrade() {
+        registryEntries := [];
+        tokendataEntries := [];
+        balancesEntries := [];
+    };
+};
 
 //🔥🔥🔥 Call NIST. We have a new Token standard. 🔥🔥🔥.
 
