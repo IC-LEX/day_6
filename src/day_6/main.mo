@@ -9,6 +9,7 @@ import Nat "mo:base/Nat";
 import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
+import Hash "mo:base/Hash";
 
 actor {
   // Challenge 1
@@ -19,11 +20,12 @@ actor {
   };
 
 // Challenge 3 - Nat called nextTokenIndex, indexing number of minted NFTs.
-var nextTokenIndex : TokenIndex = 0;  //Number of minted NFTs
+var nextTokenIndex : Nat = 0;  //Number of minted NFTs
 
 // Challenge 2
 //Declare registry HashMap called  Key TokenIndex, value Principal. which principal owns which TokenIndex.
- var registry : HashMap.HashMap<Principal, TokenIndex> = HashMap.HashMap(10, Principal.equal, Principal.hash);
+//Changed this around from Challenge 3 (commented it out for now) - try index into HashMap by TokenIndex.
+ var registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.HashMap(10, Nat.equal, Hash.hash);
 
 //Mint function - If the user is authenticated,
 // associate the current TokenIndex with the caller
@@ -34,7 +36,10 @@ var nextTokenIndex : TokenIndex = 0;  //Number of minted NFTs
     #err : E;
   };
 
+
+  //(?) build out different Result types...
   public type MintResult = Result<(), Text>;
+  public type TransferResult = Result<(), Text>;
 
   public shared({caller}) func mint() : async MintResult{
     
@@ -45,23 +50,44 @@ var nextTokenIndex : TokenIndex = 0;  //Number of minted NFTs
       case(false) //caller is not anonymous, mint token to caller and Increment Token Index
        { 
         Debug.print("Minting Token ID: " # Nat.toText(nextTokenIndex));
-        registry.put(caller, nextTokenIndex);
+        registry.put(nextTokenIndex, caller);
         nextTokenIndex := nextTokenIndex +1;
         #ok;
        };
     };
-   
-         
-      
-      //return #ok;
-    //  };
   };
-};
 
 //Challenge 4 - transfer function
 //transfer ownership of tokenIndex to the specified principal.
 //check for errors and return type **Result**.
 //public func transfer(to : Principal, tokenIndex : Nat) : async {
+
+public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) : async TransferResult{
+    
+    switch(Principal.isAnonymous(caller)){
+      case(true){
+        #err("Calling canister identifies as anonymous. This service requires authentication.");
+        };
+      case(false) //caller is not anonymous, transfer token to new owner.
+       { 
+        //Get owner of tokenID, if same as caller do transfer, else err 
+        var currentowner: ?Principal = registry.get(token);
+        if(caller != currentowner)
+          {
+          Debug.print("Transferring Token ID: " # Nat.toText(token) # "to: " # Principal.toText(newowner));
+          registry.put(token, newowner); 
+          #ok;
+          } else {
+          #err("you must own the token to transfer it.");
+          };
+        };
+      };
+    
+  };
+
+
+};  // This is the actor definition termination
+
 
 // Challenge 5 : balance function returns a list of tokenIndex owned by the called.
 
@@ -104,4 +130,3 @@ var nextTokenIndex : TokenIndex = 0;  //Number of minted NFTs
 // - balance function returns icp in canister's default account.
 // - transfer function, see lectures on the ledger canister.
 // - Example of icp in canister:
-
