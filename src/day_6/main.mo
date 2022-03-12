@@ -88,7 +88,7 @@ public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) 
 
 
 
-
+// var registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.HashMap(10, Nat.equal, Hash.hash);
 // Challenge 5 : balance function returns a list of tokenIndex owned by the called.
 
 public shared({caller}) func balance(owner_query : Principal) : async TransferResult{
@@ -99,10 +99,10 @@ switch(Principal.isAnonymous(caller)){
       case(false) //caller is not anonymous, transfer token to new owner.
        { 
         // iterate through getting tokens of the owner_query
-        Debug.print("Starting count Tokens - for: " # Principal.toText(owner_query))
-        for(hodlr in registry.key(owner_query);{
-          registry.get(token, owner_query);
-          Debug.print(Principal.toText(newowner) # "owns token:" # Nat.toText(token));
+        Debug.print("Starting count Tokens - for: " # Principal.toText(owner_query));
+        for(hodlr in registry.vals(owner_query){
+          registry.get(token);
+          Debug.print(Principal.toText(hodlr) # "owns token:" # Nat.toText(token));
           };
         #ok;  
         };
