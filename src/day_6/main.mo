@@ -22,6 +22,32 @@ actor {
     #other_error;
   };
 
+
+
+import HTTP "http";
+import Text "mo:base/Text";
+actor {
+  public query func http_request(request : HTTP.Request) : async HTTP.Response {
+    let response = {
+      body = Text.encodeUtf8("Hello world");
+      headers = [("Content-Type", "text/html; charset=UTF-8")];
+      status_code = 200 : Nat16;
+      streaming_strategy = null
+      };
+      return(response)
+    };
+};
+
+
+
+
+
+
+
+
+
+
+
 // Challenge 3 - Nat called nextTokenIndex, indexing number of minted NFTs.
 //var nextTokenIndex : Nat = 0;  //Number of minted NFTs
 
@@ -48,7 +74,6 @@ private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Princi
     #ok : T;
     #err : E;
   };
-
 
   //(?) build out different Result types...
   public type MintResult = Result<(), Text>;
