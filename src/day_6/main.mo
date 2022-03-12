@@ -25,7 +25,15 @@ var nextTokenIndex : Nat = 0;  //Number of minted NFTs
 // Challenge 2
 //Declare registry HashMap called  Key TokenIndex, value Principal. which principal owns which TokenIndex.
 //Changed this around from Challenge 3 (commented it out for now) - try index into HashMap by TokenIndex.
- var registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.HashMap(10, Nat.equal, Hash.hash);
+ 
+private stable var registryEntries : [(TokenIndex, Principal)] = [];
+ 
+var registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.fromIter<TokenIndex, Principal>(10, Nat.equal, Hash.hash);
+private let registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.fromIter<TokenIindex, Principal>(registryEntries.vals(), 10, Nat.equal, Hash.hash);
+
+private stable var balancesEntries : [(Principal, Nat)] = [];
+private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Principal, Nat>(balancesEntries.vals(), 10, Principal.equal, Principal.hash);
+
 
 //Mint function - If the user is authenticated,
 // associate the current TokenIndex with the caller
@@ -90,6 +98,9 @@ public shared({caller}) func transfer(newowner : Principal, token : TokenIndex) 
 
 // var registry : HashMap.HashMap<TokenIndex, Principal> = HashMap.HashMap(10, Nat.equal, Hash.hash);
 // Challenge 5 : balance function returns a list of tokenIndex owned by the called.
+// registry.get(token);
+
+
 
 public shared({caller}) func balance(owner_query : Principal) : async TransferResult{
 switch(Principal.isAnonymous(caller)){
@@ -101,7 +112,6 @@ switch(Principal.isAnonymous(caller)){
         // iterate through getting tokens of the owner_query
         Debug.print("Starting count Tokens - for: " # Principal.toText(owner_query));
         for(hodlr in registry.vals(owner_query){
-          registry.get(token);
           Debug.print(Principal.toText(hodlr) # "owns token:" # Nat.toText(token));
           };
         #ok;  
@@ -116,9 +126,15 @@ switch(Principal.isAnonymous(caller)){
 //return number minted by latest minter
 //};
 
+
+
+
+
 //Challenge 7 : Modify the actor for safe upgrade without loosing state.
 //Therefore  declared the registry HashMap as stable.
 //and added system preupgrade and post upgrade routines
+
+
 
 
 //🔥🔥🔥 Call NIST. We have a new Token standard. 🔥🔥🔥.
@@ -146,3 +162,39 @@ switch(Principal.isAnonymous(caller)){
 // - balance function returns icp in canister's default account.
 // - transfer function, see lectures on the ledger canister.
 // - Example of icp in canister:
+
+//Studying:https://github.com/motoko-bootcamp/bootcamp/blob/main/core_project/example/src/minter/main.mo
+//
+// private stable var tokenURIEntries : [(T.TokenId, Text)] = [];
+//     private stable var ownersEntries : [(T.TokenId, Principal)] = [];
+//     private stable var balancesEntries : [(Principal, Nat)] = [];
+//     private stable var tokenApprovalsEntries : [(T.TokenId, Principal)] = [];
+//     private stable var operatorApprovalsEntries : [(Principal, [Principal])] = [];  
+
+//     private let tokenURIs : HashMap.HashMap<T.TokenId, Text> = HashMap.fromIter<T.TokenId, Text>(tokenURIEntries.vals(), 10, Nat.equal, Hash.hash);
+//     private let owners : HashMap.HashMap<T.TokenId, Principal> = HashMap.fromIter<T.TokenId, Principal>(ownersEntries.vals(), 10, Nat.equal, Hash.hash);
+//     private let balances : HashMap.HashMap<Principal, Nat> = HashMap.fromIter<Principal, Nat>(balancesEntries.vals(), 10, Principal.equal, Principal.hash);
+//     private let tokenApprovals : HashMap.HashMap<T.TokenId, Principal> = HashMap.fromIter<T.TokenId, Principal>(tokenApprovalsEntries.vals(), 10, Nat.equal, Hash.hash);
+//     private let operatorApprovals : HashMap.HashMap<Principal, [Principal]> = HashMap.fromIter<Principal, [Principal]>(operatorApprovalsEntries.vals(), 10, Principal.equal, Principal.hash);
+
+
+ // Mint requires authentication in the frontend as we are using caller.
+    //  public shared ({caller}) func mint(uri : Text) : async Nat {
+    //     tokenPk += 1;
+    //     _mint(caller, tokenPk, uri);
+    //     return tokenPk;
+    // };
+
+
+    // // Internal
+
+    // private func _ownerOf(tokenId : T.TokenId) : ?Principal {
+    //     return owners.get(tokenId);
+    // };
+//  private func _mint(to : Principal, tokenId : Nat, uri : Text) : () {
+//         assert not _exists(tokenId);
+
+//         _incrementBalance(to);
+//         owners.put(tokenId, to);
+//         tokenURIs.put(tokenId,uri)
+//     };
